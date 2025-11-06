@@ -15,7 +15,7 @@ const Register = () => {
       const res = await API.post("/register", { username, password });
 
       if(res.data.token) {
-        localstorage.setItem("token", res.data.token);
+        localStorage.setItem("token", res.data.token);
       }
       setMessage(res.data.message);
       setUsername("");
