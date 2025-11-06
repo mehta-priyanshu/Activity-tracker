@@ -1,0 +1,56 @@
+.user-activities-page {
+  max-width: 600px;
+  margin: 2rem auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 2rem 2.5rem;
+}
+
+.user-activities-page h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #22223b;
+  letter-spacing: 1px;
+}
+
+.user-activities-page button {
+  background: #22223b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  transition: background 0.2s;
+}
+
+.user-activities-page button:hover {
+  background: #4a4e69;
+}
+
+.user-activities-page ul {
+  list-style: none;
+  padding: 0;
+}
+
+.user-activities-page li {
+  background: #f2e9e4;
+  margin-bottom: 1rem;
+  padding: 1rem 1.2rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(34,34,59,0.06);
+  font-size: 1.1rem;
+  color: #22223b;
+}
+
+.user-activities-page li strong {
+  color: #4a4e69;
+  font-weight: 600;
+}
+
+.user-activities-page p {
+  color: #9a8c98;
+  font-size: 1.1rem;
+}

@@ -1,0 +1,200 @@
+/* ---- Theme ---- */
+:root {
+  --bg: linear-gradient(145deg, #dbe9ff, #f8fbff);
+  --glass: rgba(255,255,255,0.22);
+  --border: rgba(255,255,255,0.35);
+  --text: #1c2b61;
+  --text-muted: #66739a;
+  --accent: #2a7bff;
+  --shadow: rgba(0,0,0,0.12);
+  --radius: 18px;
+  --blur: 20px;
+}
+/* Layout container */
+.admin-glass-container {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+  font-family: "Poppins", sans-serif;
+}
+
+/* ---- Sidebar ---- */
+.admin-sidebar {
+  width: 260px;
+  padding: 32px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  border-right: 1px solid var(--border);
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur));
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+}
+
+/* Sidebar Menu */
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu li {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: 0.25s;
+  font-size: 15px;
+}
+
+.sidebar-menu li:hover,
+.sidebar-menu .active {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+/* Logout Button */
+.logout-btn-glass {
+  margin-top: auto;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.12);
+  color: var(--text);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.25s;
+  font-size: 15px;
+}
+
+.logout-btn-glass:hover {
+  background: rgba(255,255,255,0.20);
+  transform: translateX(3px);
+}
+
+/* ---- Main Content ---- */
+.admin-glass-main {
+  flex: 1;
+  padding: 40px 50px;
+  color: var(--text);
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 25px;
+}
+
+/* ---- User List ---- */
+.glass-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Single User Card */
+.glass-user-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  padding: 18px;
+  border-radius: var(--radius);
+  backdrop-filter: blur(var(--blur));
+  box-shadow: 0 8px 22px var(--shadow);
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.glass-user-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px var(--shadow);
+}
+
+/* Avatar */
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* User info text */
+.user-info strong {
+  color: var(--text);
+  font-size: 17px;
+}
+
+.user-info small {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ---- Logout Modal ---- */
+.glass-modal {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(12px);
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.glass-modal-box {
+  width: 330px;
+  padding: 25px;
+  background: var(--glass);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(var(--blur));
+  text-align: center;
+}
+
+.glass-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.confirm-btn, .cancel-btn {
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 14px;
+}
+
+.confirm-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
+.cancel-btn {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.confirm-btn:hover {
+  transform: scale(1.05);
+}
+
+.cancel-btn:hover {
+  background: rgba(255,255,255,0.18);
+}

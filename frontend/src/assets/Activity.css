@@ -1,0 +1,185 @@
+/* ✅ Activity Page Card Style */
+.list-group-item {
+  border: 1px solid #ddd !important;
+  padding: 15px !important;
+  background: #ffffff !important;
+  transition: 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+  background: #f8f9fa !important;
+  transform: scale(1.01);
+}
+
+/* ✅ Unified Action Buttons */
+.activity-btn {
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: 0.25s ease-in-out;
+}
+
+/* ✏️ Edit Button */
+.activity-edit-btn {
+  background: #ffc107;
+  color: #000;
+}
+.activity-edit-btn:hover {
+  background: #e0a800;
+  transform: scale(1.05);
+}
+
+/* 🗑 Delete Button */
+.activity-delete-btn {
+  background: #dc3545;
+  color: #fff;
+}
+.activity-delete-btn:hover {
+  background: #b02a37;
+  transform: scale(1.05);
+}
+
+/* ✅ Delete Popup Box */
+.custom-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 350px;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  z-index: 1000;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+/* ✅ Edit Modal (No black background) */
+.edit-popup-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.edit-modal-content {
+  width: 400px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* ✅ Remove black backdrop */
+.edit-popup-box::before,
+.custom-popup::before {
+  display: none !important;
+}
+/* Center the activity list */
+/* Page container */
+.container {
+  max-width: 900px !important;
+}
+
+/* Activity Card */
+.activity-item {
+  width: 100%;
+  background: #fff;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  transition: 0.3s ease-in-out;
+  border-left: 6px solid #ffca28;
+}
+
+/* Hover effect */
+.activity-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+/* Content spacing */
+.activity-content h5 {
+  font-weight: bold;
+  text-transform: capitalize;
+  margin-bottom: 5px;
+  font-size: 20px;
+}
+
+.activity-content p {
+  margin-bottom: 10px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Date style */
+.activity-content small {
+  font-size: 14px;
+  color: #777;
+}
+
+/* Buttons container */
+.activity-actions {
+  margin-top: 12px;
+}
+
+/* Buttons */
+.activity-btn {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.activity-edit-btn {
+  background: #ffca28;
+  color: #333;
+}
+
+.activity-delete-btn {
+  background: #e53935;
+}
+
+/* DELETE POPUP */
+.custom-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.3);
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup-box {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  width: 350px;
+  text-align: center;
+}
+
+/* EDIT POPUP without dark background */
+.edit-popup-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+}
+
+.edit-modal-content {
+  background: #fff;
+  width: 420px;
+  padding: 20px;
+  border-radius: 10px;
+}
