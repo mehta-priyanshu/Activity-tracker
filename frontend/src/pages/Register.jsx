@@ -16,7 +16,7 @@ const Register = () => {
       setMessage(res.data.message);
       setUsername("");
       setPassword("");
-      navigate("/login");
+      navigate("/dashboard");
     } catch (err) {
       setMessage(err.response?.data?.message || "Registration failed");
     }
