@@ -13,6 +13,10 @@ const Register = () => {
     e.preventDefault();
     try {
       const res = await API.post("/register", { username, password });
+
+      if(res.data.token) {
+        localstorage.setItem("token", res.data.token);
+      }
       setMessage(res.data.message);
       setUsername("");
       setPassword("");
