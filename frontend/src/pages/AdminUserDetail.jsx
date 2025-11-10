@@ -23,6 +23,15 @@ const UserActivities = () => {
     fetchActivities();
   }, [username]);
 
+  // format date safely
+  const formatDate = (value) => {
+    if (!value) return "No date";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    // show date and time; change to toLocaleDateString() to show only date
+    return d.toLocaleString();
+  };
+
   return (
     <div className="user-activities-page">
       <button onClick={() => navigate(-1)} style={{ marginBottom: "1rem" }}>
@@ -37,7 +46,9 @@ const UserActivities = () => {
         <ul>
           {activities.map((act) => (
             <li key={act._id}>
-              <strong>{act.title}</strong> - {act.description} ({act.date})
+              <strong>{act.title}</strong> - {act.description} (
+              {formatDate(act.date || act.createdAt || act.timestamp)}
+              )
             </li>
           ))}
         </ul>
