@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import API from "../api";
 import { useNavigate } from "react-router-dom";
 import "../assets/Activity.css";
@@ -24,8 +24,8 @@ const Activities = () => {
 
   const ONE_HOUR = 60 * 60 * 1000; // 1 hour in ms
 
-  // 🟢 Fetch activities
-  const fetchActivities = async () => {
+  // 🟢 Fetch activities (wrapped with useCallback for stable reference)
+  const fetchActivities = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -42,11 +42,11 @@ const Activities = () => {
       alert("Error fetching activities. Please login again.");
       navigate("/login");
     }
-  };
+  }, [navigate]); // ✅ include navigate dependency
 
   useEffect(() => {
     fetchActivities();
-  }, [fetchActivities]);
+  }, [fetchActivities]); // ✅ now lint-safe and build-safe
 
   useEffect(() => {
     if (searchDate === "") {
