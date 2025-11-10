@@ -46,7 +46,7 @@ const Activities = () => {
 
   useEffect(() => {
     fetchActivities();
-  }, []);
+  }, [fetchActivities]);
 
   useEffect(() => {
     if (searchDate === "") {
