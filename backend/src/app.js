@@ -9,10 +9,16 @@ const cors = require("cors");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"], // ✅ allow token headers
+  })
+);
 
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 const uri = process.env.MONGO_URI;
 const dbName = "activityTracker";
 
@@ -30,16 +36,16 @@ connectDB();
 // ✅ Middleware to verify token
 function verifyToken(req, res, next) {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-  if (!token) return res.status(403).json({ message: "Token required" });
+  if (!authHeader) return res.status(401).json({ message: "Authorization header missing" });
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+  const token = authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ message: "Token not provided" });
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(401).json({ message: "Invalid or expired token" });
     req.user = decoded;
     next();
-  } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
-  }
+  });
 }
 
 // ✅ REGISTER
@@ -50,14 +56,29 @@ app.post("/api/register", async (req, res) => {
     if (user) return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await db.collection("users").insertOne({
+    const result = await db.collection("users").insertOne({
       username,
       password: hashedPassword,
       role: role || "user", // default user
     });
 
-    res.status(201).json({ message: "User registered successfully" });
+    // ✅ Generate JWT token for the new user
+    const token = jwt.sign(
+      { id: result.insertedId, username, role: role || "user" },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    // ✅ Return both message and token
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      token,
+      username,
+      role: role || "user",
+    });
   } catch (err) {
+    console.error("Register error:", err);
     res.status(500).json({ message: "Error registering user" });
   }
 });
@@ -87,14 +108,10 @@ app.post("/api/login", async (req, res) => {
 
     // --- Normal User Login ---
     const user = await db.collection("users").findOne({ username });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!valid) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign(
       { id: user._id.toString(), username: user.username, role: user.role },
@@ -115,26 +132,29 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// ✅ ADD ACTIVITY
-// --- GET today's count for the logged-in user
+// ✅ GET today's count for the logged-in user
 app.get("/api/activities/today-count", verifyToken, async (req, res) => {
-  const userId = req.user.id.toString();
+  try {
+    const userId = req.user.id.toString();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+    const count = await db.collection("activities").countDocuments({
+      userId,
+      createdAt: { $gte: today, $lt: tomorrow },
+    });
 
-  const count = await db.collection("activities").countDocuments({
-    userId,
-    createdAt: { $gte: today, $lt: tomorrow },
-  });
-
-  res.json({ count });
+    res.json({ count });
+  } catch (err) {
+    console.error("Error fetching today's count:", err);
+    res.status(500).json({ message: "Error fetching count" });
+  }
 });
 
-// --- POST add activity (keeps the 2/day limit)
+// ✅ POST add activity
 app.post("/api/activities", verifyToken, async (req, res) => {
   try {
     const { title, description } = req.body;
@@ -145,7 +165,6 @@ app.post("/api/activities", verifyToken, async (req, res) => {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -169,7 +188,7 @@ app.post("/api/activities", verifyToken, async (req, res) => {
 
     res.json({ message: "Activity added successfully" });
   } catch (err) {
-    console.log(err);
+    console.error("Error adding activity:", err);
     res.status(500).json({ message: "Error adding activity" });
   }
 });
@@ -178,10 +197,7 @@ app.post("/api/activities", verifyToken, async (req, res) => {
 app.get("/api/activities", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id.toString();
-    const activities = await db
-      .collection("activities")
-      .find({ userId })
-      .toArray();
+    const activities = await db.collection("activities").find({ userId }).toArray();
     res.json(activities);
   } catch (err) {
     res.status(500).json({ message: "Error fetching activities" });
@@ -194,11 +210,7 @@ app.get("/api/activities/:date", verifyToken, async (req, res) => {
     const { date } = req.params;
     const userId = req.user.id.toString();
 
-    const activities = await db
-      .collection("activities")
-      .find({ userId, date })
-      .toArray();
-
+    const activities = await db.collection("activities").find({ userId, date }).toArray();
     res.json(activities);
   } catch (err) {
     res.status(500).json({ message: "Error fetching activities" });
@@ -214,7 +226,6 @@ app.get("/api/admin/all", verifyToken, async (req, res) => {
     const users = await db.collection("users").find().toArray();
     const activities = await db.collection("activities").find().toArray();
 
-    // Combine users with their activities
     const data = users.map((u) => ({
       username: u.username,
       role: u.role,
@@ -239,35 +250,26 @@ app.put("/api/activities/:id", verifyToken, async (req, res) => {
       .findOne({ _id: new ObjectId(activityId), userId });
 
     if (!activity) {
-      return res
-        .status(404)
-        .json({ message: "Activity not found or unauthorized" });
+      return res.status(404).json({ message: "Activity not found or unauthorized" });
     }
 
-    // If activity is older than 1 hour, editing should not be allowed
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
     const createdTime = new Date(activity.createdAt).getTime();
 
     if (createdTime < oneHourAgo) {
-      return res
-        .status(403)
-        .json({ message: "Edit time expired. Cannot edit after 1 hour." });
+      return res.status(403).json({ message: "Edit time expired. Cannot edit after 1 hour." });
     }
 
-    // Allow edit only 2 times within 1 hour
     const editCount = activity.editCount || 0;
     if (editCount >= 2) {
-      return res
-        .status(403)
-        .json({ message: "You can only edit this activity 2 times." });
+      return res.status(403).json({ message: "You can only edit this activity 2 times." });
     }
 
-    // Update the activity
     const result = await db.collection("activities").updateOne(
       { _id: new ObjectId(activityId), userId },
       {
         $set: { title, description, date, lastEditedAt: new Date() },
-        $inc: { editCount: 1 }, // increment edit count by 1
+        $inc: { editCount: 1 },
       }
     );
 
@@ -285,14 +287,13 @@ app.put("/api/activities/:id", verifyToken, async (req, res) => {
   }
 });
 
-//getting user activity at admin panel
-app.get('/api/admin/user/:username', async (req, res) => {
+// ✅ Get user activity for admin
+app.get("/api/admin/user/:username", async (req, res) => {
   const { username } = req.params;
   try {
     const user = await db.collection("users").findOne({ username });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find activities by userId (not username!)
     const activities = await db
       .collection("activities")
       .find({ userId: user._id.toString() })
@@ -315,9 +316,8 @@ app.delete("/api/activities/:id", verifyToken, async (req, res) => {
     });
 
     if (result.deletedCount === 0)
-      return res
-        .status(404)
-        .json({ message: "Activity not found or unauthorized" });
+      return res.status(404).json({ message: "Activity not found or unauthorized" });
+
     res.json({ message: "Activity deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Error deleting activity" });

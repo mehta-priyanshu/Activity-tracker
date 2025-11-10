@@ -6,7 +6,7 @@ const API = axios.create({
 
 // Automatically add token to headers
 API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token"); // ✅ must match exactly
   if (token) { 
     req.headers.Authorization = `Bearer ${token}`;
   }

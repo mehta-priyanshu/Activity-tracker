@@ -9,20 +9,79 @@ const Register = () => {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
+  const saveTokenAndRedirect = (token) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("username", username);
+    API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    setTimeout(() => navigate("/dashboard"), 400);
+  };
+
+  const attemptLogin = async () => {
+    try {
+      const loginRes = await API.post("/login", { username, password });
+      const loginToken =
+        loginRes?.data?.token ||
+        loginRes?.data?.data?.token ||
+        loginRes?.data?.user?.token;
+      if (loginToken) {
+        saveTokenAndRedirect(loginToken);
+        setMessage("Registered and logged in");
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Auto-login failed:", err?.response || err);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
     try {
       const res = await API.post("/register", { username, password });
 
-      if(res.data.token) {
-        localStorage.setItem("token", res.data.token);
+      // accept several possible token shapes
+      const token =
+        res?.data?.token ||
+        res?.data?.data?.token ||
+        res?.data?.user?.token;
+
+      if (token) {
+        saveTokenAndRedirect(token);
+        setMessage("Registration successful");
+        setUsername("");
+        setPassword("");
+        return;
       }
-      setMessage(res.data.message);
-      setUsername("");
-      setPassword("");
-      navigate("/dashboard");
+
+      // If no token returned, try automatic login as fallback
+      const loggedIn = await attemptLogin();
+      if (loggedIn) {
+        setUsername("");
+        setPassword("");
+        return;
+      }
+
+      // If still no token, show server message
+      setMessage(
+        res?.data?.message ||
+        res?.data?.error ||
+        JSON.stringify(res?.data) ||
+        "Registration failed. Please try again."
+      );
     } catch (err) {
-      setMessage(err.response?.data?.message || "Registration failed");
+      console.error("Register error:", err?.response || err);
+      const serverMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        JSON.stringify(err?.response?.data) ||
+        "Registration failed. Please try again.";
+      setMessage(serverMsg);
+
+      // cleanup partial state
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
     }
   };
 

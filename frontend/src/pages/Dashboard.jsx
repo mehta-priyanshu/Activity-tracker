@@ -30,29 +30,52 @@ const Dashboard = () => {
   // ✅ Fetch today's activity count from backend
   useEffect(() => {
     const fetchCount = async () => {
+      const token = localStorage.getItem("token");
+      if(!token) {
+        console.log("No token found, redirecting to login");
+        navigate("/login");
+        return;
+      }
       try {
         const res = await API.get("/activities/today-count");
         setActivityCount(res.data.count);
       } catch (err) {
-        console.log("Error fetching activity count");
+        console.log("Error fetching activity count:", err.response?.status, err.response?.data);
+        if(err.repsone?.status === 401) {
+          toast.error("Session expired. Please login again.");
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
       }
     };
     fetchCount();
-  }, []);
+  }, [navigate]);
 
   // ✅ Add activity
   const addActivity = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) {
+    toast.error("Invalid token. Please log in again.");
+    navigate("/login");
+    return;
+  }
     try {
       await API.post("/activities", { title, description });
 
       setTitle("");
       setDescription("");
       setActivityCount(activityCount + 1);
-
       toast.success("Activity added successfully!");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Error adding activity");
+      if (err.response?.status === 401) {
+        toast.error("Session expired. Please log in again.");
+        localStorage.removeItem("token");
+        navigate("/login");
+    
+      } else {
+        toast.error(err.response?.data?.message || "Error adding activity");
+      }
     }
   };
 
