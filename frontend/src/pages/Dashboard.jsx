@@ -31,7 +31,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchCount = async () => {
       const token = localStorage.getItem("token");
-      if(!token) {
+      if (!token) {
         console.log("No token found, redirecting to login");
         navigate("/login");
         return;
@@ -41,7 +41,7 @@ const Dashboard = () => {
         setActivityCount(res.data.count);
       } catch (err) {
         console.log("Error fetching activity count:", err.response?.status, err.response?.data);
-        if(err.repsone?.status === 401) {
+        if (err.response?.status === 401) {
           toast.error("Session expired. Please login again.");
           localStorage.removeItem("token");
           navigate("/login");
@@ -56,10 +56,10 @@ const Dashboard = () => {
     e.preventDefault();
     const token = localStorage.getItem("token");
     if (!token) {
-    toast.error("Invalid token. Please log in again.");
-    navigate("/login");
-    return;
-  }
+      toast.error("Invalid token. Please log in again.");
+      navigate("/login");
+      return;
+    }
     try {
       await API.post("/activities", { title, description });
 
@@ -72,7 +72,6 @@ const Dashboard = () => {
         toast.error("Session expired. Please log in again.");
         localStorage.removeItem("token");
         navigate("/login");
-    
       } else {
         toast.error(err.response?.data?.message || "Error adding activity");
       }
@@ -92,18 +91,22 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <ToastContainer position="top-right" autoClose={2000} />
 
+      {/* ✅ Logout Popup with Blur Overlay */}
       {showLogoutModal && (
-        <div className="logout-popup">
-          <h4>Are you sure you want to logout?</h4>
-          <div className="logout-actions">
-            <button className="btn-modern btn-ok" onClick={confirmLogout}>
-              Yes, Logout
-            </button>
-            <button className="btn-modern btn-cancel" onClick={cancelLogout}>
-              Cancel
-            </button>
+        <>
+          <div className="logout-overlay" onClick={cancelLogout}></div>
+          <div className="logout-popup">
+            <h4>Are you sure you want to logout?</h4>
+            <div className="logout-actions">
+              <button className="btn-modern btn-ok" onClick={confirmLogout}>
+                Yes, Logout
+              </button>
+              <button className="btn-modern btn-cancel" onClick={cancelLogout}>
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Dropdown */}
@@ -139,7 +142,9 @@ const Dashboard = () => {
       </div>
 
       {/* ✅ Show count */}
-      <div style={{ textAlign: "center", marginBottom: "10px", fontWeight: "bold" }}>
+      <div
+        style={{ textAlign: "center", marginBottom: "10px", fontWeight: "bold" }}
+      >
         You added {activityCount}/2 activities today ✅
       </div>
 
