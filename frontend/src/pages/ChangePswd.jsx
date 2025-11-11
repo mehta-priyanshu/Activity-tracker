@@ -37,7 +37,8 @@ const ChangePassword = () => {
       if (res.data.success) {
         toast.success("Password updated successfully!");
         localStorage.removeItem("resetUsername");
-        setTimeout(() => navigate("/login"), 2000);
+        localStorage.removeItem("resetToken");
+        setTimeout(() => navigate("/login"), 2000); // ✅ Redirect to login after success
       } else {
         toast.error(res.data.message || "Failed to update password.");
       }

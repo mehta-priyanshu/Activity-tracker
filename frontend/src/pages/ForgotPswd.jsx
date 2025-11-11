@@ -30,9 +30,9 @@ const ForgotPassword = () => {
 
       // Accept multiple shapes: { exists:true }, { success:true, token }, etc.
       if (data.exists === true || data.success === true || data.token) {
-        // store username + token (if provided) for the change-password flow
-        sessionStorage.setItem("resetUsername", cleanUsername);
-        if (data.token) sessionStorage.setItem("resetToken", data.token);
+        // ✅ Use localStorage consistently for both components
+        localStorage.setItem("resetUsername", cleanUsername);
+        if (data.token) localStorage.setItem("resetToken", data.token);
 
         toast.success(data.message || "Reset token generated successfully");
 
