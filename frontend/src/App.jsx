@@ -7,6 +7,8 @@ import Admin from "./pages/AdminPage";
 import LandingPage from "./pages/LandingPage";
 import Activities from "./pages/Activities";
 import AdminUserDetails from "./pages/AdminUserDetail";
+import ForgotPassword from "./pages/ForgotPswd";
+import ChangePassword from "./pages/ChangePswd";
 //import AdminDashboard from "./pages/AdminDashboard";
 
 const App = () => (
@@ -19,6 +21,8 @@ const App = () => (
       <Route path="/activities" element={<Activities />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/admin/user/:username" element={<AdminUserDetails />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/change-password" element={<ChangePassword />} />
       </Routes>
   </Router>
 );

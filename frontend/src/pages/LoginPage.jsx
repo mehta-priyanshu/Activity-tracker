@@ -12,19 +12,17 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    //console.log("API Base URL:", API.defaults.baseURL);
     try {
       const res = await API.post("/login", { username, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.role?.toLowerCase() || "user");
       localStorage.setItem("username", res.data.username || username);
 
-      if(res.data.role?.toLowerCase() === "admin") {
+      if (res.data.role?.toLowerCase() === "admin") {
         navigate("/admin");
       } else {
         navigate("/dashboard");
       }
-      //navigate(res.data.role === "admin" ? "/admin" : "/dashboard");
     } catch (err) {
       console.error("Login error:", err);
       setError(err.response?.data?.message || "Login failed");
@@ -51,6 +49,15 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+
+          {/* 🔗 Forgot Password Link */}
+          <p
+            className="forgot-password-link"
+            onClick={() => navigate("/forgot-password")}
+          >
+            Forgot Password?
+          </p>
+
           <button type="submit">Login</button>
         </form>
 

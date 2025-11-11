@@ -6,6 +6,7 @@ const { MongoClient, ObjectId } = require("mongodb");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const crypto = require("crypto");
 
 const app = express();
 app.use(express.json());
@@ -129,6 +130,81 @@ app.post("/api/login", async (req, res) => {
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ message: "Error logging in" });
+  }
+});
+// forgot password and change password
+
+app.post("/api/check-username", async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    // Basic validation
+    if (!username || username.trim() === "") {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    // Find the user by username
+    const user = await db.collection("users").findOne({ username: username.trim() });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate reset token and expiry (valid for 15 minutes)
+    const token = crypto.randomBytes(20).toString("hex");
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Save reset token in the same user document
+    await db.collection("users").updateOne(
+      { username: username.trim() },
+      { $set: { resetToken: token, resetExpires: expires } }
+    );
+
+    // Success response
+    return res.json({
+      success: true,
+      message: "Reset token generated successfully",
+      token,
+    });
+
+  } catch (err) {
+    console.error("check-username error:", err);
+    return res.status(500).json({ message: "Server error while checking username" });
+  }
+});
+
+app.post("/api/change-password", async (req, res) => {
+  try {
+    const { username, newPassword } = req.body;
+
+    // ✅ Validate inputs
+    if (!username || !newPassword)
+      return res.status(400).json({ success: false, message: "username and newPassword required" });
+
+    if (String(newPassword).length < 6)
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+
+    // ✅ Find user by username
+    const user = await db.collection("users").findOne({
+      username: username.trim(),
+    });
+
+    if (!user)
+      return res.status(400).json({ success: false, message: "Invalid username" });
+
+    // ✅ Hash new password
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    // ✅ Update password
+    await db.collection("users").updateOne(
+      { _id: user._id },
+      { $set: { password: hashed } }
+    );
+
+    return res.json({ success: true, message: "Password changed successfully" });
+  } catch (err) {
+    console.error("change-password error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
