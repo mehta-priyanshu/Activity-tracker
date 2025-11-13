@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import API from "../api";
 import { useNavigate } from "react-router-dom";
+import "../assets/Frgtpswd.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -11,7 +12,6 @@ const ForgotPassword = () => {
 
   const validateContact = (raw) => {
     const digits = String(raw || "").replace(/\D/g, "");
-    // 10 digits, starts with 63-99
     const contactRegex = /^(?:6[3-9]|[7-9]\d)\d{8}$/;
     return contactRegex.test(digits) ? digits : null;
   };
@@ -20,31 +20,24 @@ const ForgotPassword = () => {
     e.preventDefault();
     const cleanContact = validateContact(contact);
     if (!cleanContact) {
-      // user-visible message for invalid format / wrong input
       toast.error("Please enter a valid registered number.");
       return;
     }
 
     setLoading(true);
     try {
-      // send contact field to backend (backend should accept contact)
       const res = await API.post("/check-username", { contact: cleanContact });
       const data = res?.data || {};
 
-      // accept several shapes: { success:true, token }, { exists:true }, ...
       if (data.exists === true || data.success === true || data.token) {
-        localStorage.setItem("resetContact", cleanContact);
-        if (data.token) localStorage.setItem("resetToken", data.token);
+        sessionStorage.setItem("resetContact", cleanContact);
+        if (data.token) sessionStorage.setItem("resetToken", data.token);
 
         toast.success(data.message || "Reset token generated successfully");
-
-        setTimeout(() => {
-          navigate("/change-password", { state: { contact: cleanContact } });
-        }, 700);
+        setTimeout(() => navigate("/change-password", { state: { contact: cleanContact } }), 700);
         return;
       }
 
-      // backend says not found or ambiguous -> show the unified message
       toast.error("Please enter a valid registered number.");
     } catch (err) {
       console.error("Error checking contact:", err?.response ?? err);
@@ -53,7 +46,6 @@ const ForgotPassword = () => {
         err?.response?.statusText ||
         "Something went wrong. Please try again.";
 
-      // If server explicitly says not found, show unified message
       if (err?.response?.status === 404 || /not found|no user/i.test(String(serverMsg))) {
         toast.error("Please enter a valid registered number.");
       } else {
@@ -65,28 +57,42 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="container mt-5" style={{ maxWidth: "420px" }}>
+    <div className="forgot-page">
       <ToastContainer position="top-right" autoClose={2000} />
-      <h3 className="text-center mb-4">Forgot Password</h3>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label htmlFor="fp-contact">Registered Mobile Number:</label>
-          <input
-            id="fp-contact"
-            type="tel"
-            className="form-control"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            required
-            disabled={loading}
-            placeholder="e.g. 639XXXXXXXX"
-            maxLength={14}
-          />
-        </div>
-        <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-          {loading ? "Checking..." : "Continue"}
-        </button>
-      </form>
+      <button
+        type="button"
+        className="fp-back-btn"
+        onClick={() => navigate("/login")}
+      >
+        ← Back to Login
+      </button>
+
+      <div className="forgot-card">
+        <h3>Forgot Password</h3>
+        <p className="lead">Enter your registered mobile number to reset your password.</p>
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="fp-contact">Registered Mobile Number</label>
+            <input
+              id="fp-contact"
+              type="tel"
+              className="form-control"
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="e.g. 639XXXXXXXX"
+              maxLength={14}
+            />
+          
+          </div>
+
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Checking..." : "Continue"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

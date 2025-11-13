@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../api";
+import "../assets/Chngpswd.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -92,44 +93,51 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: 480 }}>
+    <div className="change-page">
       <ToastContainer position="top-right" autoClose={2000} />
-      <h3 className="mb-3">Change Password</h3>
+      <button type="button" className="cp-back-btn" onClick={() => navigate("/forgot-password")}>
+        ← Back to Forgot Password
+      </button>
 
-      <form onSubmit={handleChangePassword}>
-        <div className="mb-3">
-          <label>Registered Mobile Number</label>
-          <input type="tel" className="form-control" value={getResetContact()} readOnly />
-        </div>
+      <div className="change-card">
+        <h3>Change Password</h3>
+        <p className="lead">Enter a new password for your account.</p>
 
-        <div className="mb-3">
-          <label>New Password</label>
-          <input
-            type="password"
-            className="form-control"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-        </div>
+        <form onSubmit={handleChangePassword}>
+          <div className="form-group">
+            <label>Registered Mobile Number</label>
+            <input type="tel" className="form-control" value={getResetContact()} readOnly />
+          </div>
 
-        <div className="mb-3">
-          <label>Confirm Password</label>
-          <input
-            type="password"
-            className="form-control"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-        </div>
+          <div className="form-group">
+            <label>New Password</label>
+            <input
+              type="password"
+              className="form-control"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </div>
 
-        <button className="btn btn-primary w-100" type="submit" disabled={loading}>
-          {loading ? "Changing..." : "Change Password"}
-        </button>
-      </form>
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input
+              type="password"
+              className="form-control"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </div>
+
+          <button className="btn btn-primary" type="submit" disabled={loading}>
+            {loading ? "Changing..." : "Change Password"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

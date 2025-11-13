@@ -1,0 +1,143 @@
+:root {
+  --bg-top: #89f7fe;
+  --bg-bottom: #66a6ff;
+  --card-bg: #ffffff;
+  --accent-start: #6a82fb;
+  --accent-end: #fc5c7d;
+  --muted: #6c757d;
+  --radius: 12px;
+  --card-width: 420px;
+  --shadow: 0 10px 25px rgba(0,0,0,0.08);
+  --focus-shadow: 0 0 5px rgba(106,130,251,0.25);
+}
+
+.change-page {
+  font-family: "Poppins", sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+  padding: 2rem;
+}
+
+.change-card {
+  background: var(--card-bg);
+  padding: 32px 36px;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  text-align: left;
+  width: 100%;
+  max-width: var(--card-width);
+  transition: transform 0.25s ease;
+  border: 1px solid rgba(10, 20, 40, 0.04);
+}
+
+.change-card:hover {
+  transform: translateY(-4px);
+}
+
+.change-card h3 {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #111827;
+  font-size: 1.35rem;
+}
+
+.change-card p.lead {
+  margin-bottom: 18px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* Form controls */
+.change-card .form-group {
+  margin-bottom: 14px;
+}
+
+.change-card label {
+  display: block;
+  margin-bottom: 6px;
+  color: #26334a;
+  font-size: 0.92rem;
+}
+
+.change-card input[type="tel"],
+.change-card input[type="text"],
+.change-card input[type="password"] {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15,23,42,0.08);
+  font-size: 0.95rem;
+  background: #fff;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.change-card input:focus {
+  outline: none;
+  border-color: rgba(106,130,251,0.9);
+  box-shadow: var(--focus-shadow);
+}
+
+/* Button */
+.change-card .btn-primary {
+  width: 100%;
+  padding: 10px 12px;
+  background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(106,130,251,0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.change-card .btn-primary:hover {
+  transform: translateY(-2px);
+}
+
+/* Helper / error text */
+.change-card .form-text {
+  color: var(--muted);
+  font-size: 0.83rem;
+  margin-top: 6px;
+}
+
+.error {
+  color: #d9534f;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+/* Back button (top-left) */
+.cp-back-btn {
+  position: fixed;
+  left: 18px;
+  top: 18px;
+  z-index: 1100;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: 0 8px 20px rgba(2,6,23,0.06);
+  color: #0f172a;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Responsive tweaks */
+@media (max-width: 480px) {
+  .change-card {
+    padding: 20px;
+    border-radius: 14px;
+  }
+  .cp-back-btn {
+    left: 10px;
+    top: 10px;
+    padding: 7px 10px;
+  }
+}
