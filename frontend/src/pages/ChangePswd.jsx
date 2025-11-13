@@ -25,7 +25,12 @@ const ChangePassword = () => {
     null;
 
   useEffect(() => {
-    const contact = getResetContact();
+    // compute contact inline to avoid referencing getResetContact (prevents missing-deps ESLint error)
+    const contact =
+      location?.state?.contact ||
+      sessionStorage.getItem("resetContact") ||
+      localStorage.getItem("resetContact") ||
+      "";
     if (!contact) {
       toast.error("No reset contact found. Please start the forgot-password flow again.");
       setTimeout(() => navigate("/forgot-password"), 1000);
