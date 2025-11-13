@@ -189,75 +189,110 @@ app.post("/api/login", async (req, res) => {
 
 app.post("/api/check-username", async (req, res) => {
   try {
-    const { username } = req.body;
+    const { contact } = req.body || {};
 
-    // Basic validation
-    if (!username || username.trim() === "") {
-      return res.status(400).json({ message: "Username is required" });
+    // Require contact only (mobile number)
+    if (!contact || String(contact).trim() === "") {
+      return res.status(400).json({ message: "Contact number is required" });
     }
 
-    // Find the user by username
-    const user = await db.collection("users").findOne({ username: username.trim() });
+    // Normalize and validate contact: digits only, 10 digits, starts with 63-99
+    const cleanContact = String(contact).replace(/\D/g, "");
+    const contactRegex = /^(?:6[3-9]|[7-9]\d)\d{8}$/;
+    if (!contactRegex.test(cleanContact)) {
+      return res.status(400).json({ message: "Invalid contact format" });
+    }
 
+    // Find user by contact
+    const user = await db.collection("users").findOne({ contact: cleanContact });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Generate reset token and expiry (valid for 15 minutes)
+    // Generate reset token and expiry (15 minutes)
     const token = crypto.randomBytes(20).toString("hex");
     const expires = new Date(Date.now() + 15 * 60 * 1000);
 
-    // Save reset token in the same user document
+    // Save token to user doc
     await db.collection("users").updateOne(
-      { username: username.trim() },
+      { _id: user._id },
       { $set: { resetToken: token, resetExpires: expires } }
     );
 
-    // Success response
+    // Return success (return token for dev/testing; in production send via SMS/email)
     return res.json({
       success: true,
       message: "Reset token generated successfully",
       token,
     });
-
   } catch (err) {
-    console.error("check-username error:", err);
-    return res.status(500).json({ message: "Server error while checking username" });
+    console.error("check-username (contact) error:", err);
+    return res.status(500).json({ message: "Server error while checking contact" });
   }
 });
 
 app.post("/api/change-password", async (req, res) => {
   try {
-    const { username, newPassword } = req.body;
+    const { contact, newPassword, token } = req.body || {};
 
-    // ✅ Validate inputs
-    if (!username || !newPassword)
-      return res.status(400).json({ success: false, message: "username and newPassword required" });
+    // Require contact (mobile) and newPassword
+    if (!contact || !newPassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Contact and newPassword required" });
+    }
 
-    if (String(newPassword).length < 6)
-      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+    // Normalize and validate contact: digits only, 10 digits, starts with 63-99
+    const cleanContact = String(contact).replace(/\D/g, "");
+    const contactRegex = /^(?:6[3-9]|[7-9]\d)\d{8}$/;
+    if (!contactRegex.test(cleanContact)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid contact format" });
+    }
 
-    // ✅ Find user by username
-    const user = await db.collection("users").findOne({
-      username: username.trim(),
-    });
+    // Password length check
+    if (String(newPassword).length < 6) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Password must be at least 6 characters" });
+    }
 
-    if (!user)
-      return res.status(400).json({ success: false, message: "Invalid username" });
+    // Find user by contact
+    const user = await db.collection("users").findOne({ contact: cleanContact });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid contact/username" });
+    }
 
-    // ✅ Hash new password
+    // If token provided, validate it (optional)
+    if (token) {
+      if (
+        !user.resetToken ||
+        !user.resetExpires ||
+        new Date(user.resetExpires) < new Date() ||
+        user.resetToken !== token
+      ) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid or expired reset token" });
+      }
+    }
+
+    // Hash and update password, clear reset token fields
     const hashed = await bcrypt.hash(newPassword, 10);
-
-    // ✅ Update password
     await db.collection("users").updateOne(
       { _id: user._id },
-      { $set: { password: hashed } }
+      { $set: { password: hashed }, $unset: { resetToken: "", resetExpires: "" } }
     );
 
     return res.json({ success: true, message: "Password changed successfully" });
   } catch (err) {
-    console.error("change-password error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("change-password (contact) error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error" });
   }
 });
 

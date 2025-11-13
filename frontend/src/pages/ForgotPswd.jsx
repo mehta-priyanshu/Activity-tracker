@@ -5,73 +5,82 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const ForgotPassword = () => {
-  const [username, setUsername] = useState("");
+  const [contact, setContact] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const validateContact = (raw) => {
+    const digits = String(raw || "").replace(/\D/g, "");
+    // 10 digits, starts with 63-99
+    const contactRegex = /^(?:6[3-9]|[7-9]\d)\d{8}$/;
+    return contactRegex.test(digits) ? digits : null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const cleanUsername = String(username || "").trim();
-
-    if (!cleanUsername) {
-      toast.error("Please enter a valid username.");
-      return;
-    }
-
-    if (cleanUsername.length < 3) {
-      toast.error("Username must be at least 3 characters.");
+    const cleanContact = validateContact(contact);
+    if (!cleanContact) {
+      // user-visible message for invalid format / wrong input
+      toast.error("Please enter a valid registered number.");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await API.post("/check-username", { username: cleanUsername });
+      // send contact field to backend (backend should accept contact)
+      const res = await API.post("/check-username", { contact: cleanContact });
       const data = res?.data || {};
 
-      // Accept multiple shapes: { exists:true }, { success:true, token }, etc.
+      // accept several shapes: { success:true, token }, { exists:true }, ...
       if (data.exists === true || data.success === true || data.token) {
-        // ✅ Use localStorage consistently for both components
-        localStorage.setItem("resetUsername", cleanUsername);
+        localStorage.setItem("resetContact", cleanContact);
         if (data.token) localStorage.setItem("resetToken", data.token);
 
         toast.success(data.message || "Reset token generated successfully");
 
-        // redirect to change-password where user will submit new password + token
         setTimeout(() => {
-          navigate("/change-password", { state: { username: cleanUsername } });
-        }, 800);
+          navigate("/change-password", { state: { contact: cleanContact } });
+        }, 700);
         return;
       }
 
-      toast.error(data.message || "Username not found.");
+      // backend says not found or ambiguous -> show the unified message
+      toast.error("Please enter a valid registered number.");
     } catch (err) {
-      console.error("Error checking username:", err?.response ?? err);
+      console.error("Error checking contact:", err?.response ?? err);
       const serverMsg =
         err?.response?.data?.message ||
         err?.response?.statusText ||
         "Something went wrong. Please try again.";
-      toast.error(serverMsg);
+
+      // If server explicitly says not found, show unified message
+      if (err?.response?.status === 404 || /not found|no user/i.test(String(serverMsg))) {
+        toast.error("Please enter a valid registered number.");
+      } else {
+        toast.error(serverMsg);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container mt-5" style={{ maxWidth: "400px" }}>
+    <div className="container mt-5" style={{ maxWidth: "420px" }}>
       <ToastContainer position="top-right" autoClose={2000} />
       <h3 className="text-center mb-4">Forgot Password</h3>
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label htmlFor="fp-username">Enter Username:</label>
+          <label htmlFor="fp-contact">Registered Mobile Number:</label>
           <input
-            id="fp-username"
-            type="text"
+            id="fp-contact"
+            type="tel"
             className="form-control"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
             required
             disabled={loading}
-            placeholder="your username"
+            placeholder="e.g. 639XXXXXXXX"
+            maxLength={14}
           />
         </div>
         <button type="submit" className="btn btn-primary w-100" disabled={loading}>

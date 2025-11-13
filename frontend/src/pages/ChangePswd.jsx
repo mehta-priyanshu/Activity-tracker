@@ -1,55 +1,85 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import API from "../api";
-import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const ChangePassword = () => {
-  const navigate = useNavigate();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const getResetContact = () =>
+    location?.state?.contact ||
+    sessionStorage.getItem("resetContact") ||
+    localStorage.getItem("resetContact") ||
+    "";
+
+  const getResetToken = () =>
+    location?.state?.token ||
+    sessionStorage.getItem("resetToken") ||
+    localStorage.getItem("resetToken") ||
+    null;
+
+  useEffect(() => {
+    const contact = getResetContact();
+    if (!contact) {
+      toast.error("No reset contact found. Please start the forgot-password flow again.");
+      setTimeout(() => navigate("/forgot-password"), 1000);
+    }
+  }, [location, navigate]);
+
   const handleChangePassword = async (e) => {
     e.preventDefault();
+    const rawContact = getResetContact();
+    const cleanContact = String(rawContact || "").replace(/\D/g, "");
+    const contactRegex = /^(?:6[3-9]|[7-9]\d)\d{8}$/;
 
-    if (!newPassword.trim() || !confirmPassword.trim()) {
-      toast.error("Please fill all fields.");
+    if (!contactRegex.test(cleanContact)) {
+      toast.error("Invalid registered number. Start forgot-password again.");
       return;
     }
 
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
     if (newPassword !== confirmPassword) {
       toast.error("Passwords do not match.");
       return;
     }
 
-    const username = localStorage.getItem("resetUsername");
-    if (!username) {
-      toast.error("Username not found. Please go back to Forgot Password.");
-      navigate("/forgot-password");
-      return;
-    }
-
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await API.post("/change-password", { username, newPassword });
+      const token = getResetToken();
+      const payload = { contact: cleanContact, newPassword };
+      if (token) payload.token = token;
 
-      if (res.data.success) {
-        toast.success("Password updated successfully!");
-        localStorage.removeItem("resetUsername");
+      console.log("Change-password payload:", payload); // debug line
+
+      const res = await API.post("/change-password", payload);
+
+      if (res?.data?.success) {
+        toast.success(res.data.message || "Password changed successfully");
+        // cleanup
+        sessionStorage.removeItem("resetContact");
+        sessionStorage.removeItem("resetToken");
+        localStorage.removeItem("resetContact");
         localStorage.removeItem("resetToken");
-        setTimeout(() => navigate("/login"), 2000); // ✅ Redirect to login after success
-      } else {
-        toast.error(res.data.message || "Failed to update password.");
+        setTimeout(() => navigate("/login"), 900);
+        return;
       }
+      toast.error(res?.data?.message || "Error changing password");
     } catch (err) {
-      console.log("Error changing password:", err.response?.status, err.response?.data);
-      if (err.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        localStorage.removeItem("token");
-        navigate("/login");
+      console.error("Error changing password:", err?.response || err);
+      const serverMsg = err?.response?.data?.message || `Error: ${err?.response?.status || ""}`;
+      if (err?.response?.status === 400 && /Contact and newPassword required|Invalid contact/i.test(String(serverMsg))) {
+        toast.error("Please use the same registered number you used to request reset.");
       } else {
-        toast.error(err.response?.data?.message || "Something went wrong.");
+        toast.error(serverMsg || "Error changing password");
       }
     } finally {
       setLoading(false);
@@ -57,35 +87,41 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="container mt-5" style={{ maxWidth: "400px" }}>
+    <div className="container" style={{ maxWidth: 480 }}>
       <ToastContainer position="top-right" autoClose={2000} />
-      <h3 className="text-center mb-4">Change Password</h3>
+      <h3 className="mb-3">Change Password</h3>
+
       <form onSubmit={handleChangePassword}>
         <div className="mb-3">
-          <label>New Password:</label>
+          <label>Registered Mobile Number</label>
+          <input type="tel" className="form-control" value={getResetContact()} readOnly />
+        </div>
+
+        <div className="mb-3">
+          <label>New Password</label>
           <input
             type="password"
             className="form-control"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
+            minLength={6}
           />
         </div>
+
         <div className="mb-3">
-          <label>Confirm New Password:</label>
+          <label>Confirm Password</label>
           <input
             type="password"
             className="form-control"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
+            minLength={6}
           />
         </div>
-        <button
-          type="submit"
-          className="btn btn-success w-100"
-          disabled={loading}
-        >
+
+        <button className="btn btn-primary w-100" type="submit" disabled={loading}>
           {loading ? "Changing..." : "Change Password"}
         </button>
       </form>

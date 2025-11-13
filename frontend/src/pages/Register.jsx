@@ -126,6 +126,14 @@ const Register = () => {
 
         <form onSubmit={handleSubmit}>
           <input
+            placeholder="Contact number (10 digits)"
+            type="tel"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            disabled={loading}
+            maxLength={14}
+          />
+          <input
             placeholder="Enter username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -138,14 +146,7 @@ const Register = () => {
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
           />
-          <input
-            placeholder="Contact number (10 digits)"
-            type="tel"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            disabled={loading}
-            maxLength={14}
-          />
+          
           <button type="submit" disabled={loading}>
             {loading ? "Registering..." : "Register"}
           </button>
