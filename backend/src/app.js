@@ -52,35 +52,53 @@ function verifyToken(req, res, next) {
 // ✅ REGISTER
 app.post("/api/register", async (req, res) => {
   try {
-    const { username, password, role } = req.body;
-    const user = await db.collection("users").findOne({ username });
-    if (user) return res.status(400).json({ message: "User already exists" });
+    const { username, password } = req.body || {};
+    const cleanUsername = String(username || "").trim();
+    const cleanPassword = String(password || "");
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db.collection("users").insertOne({
-      username,
-      password: hashedPassword,
-      role: role || "user", // default user
+    // Required fields
+    if (!cleanUsername || !cleanPassword) {
+      return res.status(400).json({ message: "Username and password required" });
+    }
+
+    // Minimum lengths
+    if (cleanUsername.length < 3) {
+      return res.status(400).json({ message: "Username must be at least 3 characters" });
+    }
+    if (cleanPassword.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    // Check existing user
+    const existing = await db.collection("users").findOne({ username: cleanUsername });
+    if (existing) {
+      return res.status(409).json({ message: "Username already exists" });
+    }
+
+    // Hash password and insert user
+    const hashed = await bcrypt.hash(cleanPassword, 10);
+    const newUser = {
+      username: cleanUsername,
+      password: hashed,
+      createdAt: new Date(),
+    };
+    const insertRes = await db.collection("users").insertOne(newUser);
+
+    // Create token and optionally save it
+    const userId = insertRes.insertedId;
+    const token = jwt.sign({ id: userId.toString(), username: cleanUsername }, JWT_SECRET, {
+      expiresIn: "7d",
     });
 
-    // ✅ Generate JWT token for the new user
-    const token = jwt.sign(
-      { id: result.insertedId, username, role: role || "user" },
-      JWT_SECRET,
-      { expiresIn: "1h" }
+    await db.collection("users").updateOne(
+      { _id: userId },
+      { $set: { token } }
     );
 
-    // ✅ Return both message and token
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      token,
-      username,
-      role: role || "user",
-    });
+    return res.json({ success: true, message: "Registered", token });
   } catch (err) {
     console.error("Register error:", err);
-    res.status(500).json({ message: "Error registering user" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
