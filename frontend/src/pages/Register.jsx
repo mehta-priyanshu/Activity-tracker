@@ -7,12 +7,14 @@ const Register = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const saveTokenAndRedirect = (token) => {
     localStorage.setItem("token", token);
     localStorage.setItem("username", username);
     API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    setLoading(false);
     setTimeout(() => navigate("/dashboard"), 400);
   };
 
@@ -38,6 +40,22 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
+    // Enforce validation on the JS side so users cannot bypass via Inspect
+    const cleanUsername = String(username || "").trim();
+    const cleanPassword = String(password || "");
+    if (!cleanUsername || !cleanPassword) {
+      setMessage("Username and password are required.");
+      return;
+    }
+    if (cleanUsername.length < 3) {
+      setMessage("Username must be at least 3 characters.");
+      return;
+    }
+    if (cleanPassword.length < 6) {
+      setMessage("Password must be at least 6 characters.");
+      return;
+    }
+    setLoading(true);
     try {
       const res = await API.post("/register", { username, password });
 
@@ -82,6 +100,8 @@ const Register = () => {
       // cleanup partial state
       localStorage.removeItem("token");
       localStorage.removeItem("username");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,16 +116,18 @@ const Register = () => {
             placeholder="Enter username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            required
+            disabled={loading}
           />
           <input
             placeholder="Enter password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
+            disabled={loading}
           />
-          <button type="submit">Register</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Registering..." : "Register"}
+          </button>
         </form>
 
         <p className="redirect-text">
