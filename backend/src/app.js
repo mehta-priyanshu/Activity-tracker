@@ -31,6 +31,16 @@ async function connectDB() {
   await client.connect();
   db = client.db(dbName);
   console.log("MongoDB connected");
+
+  try {
+    // Ensure unique indexes for username and contact to enforce uniqueness at DB level
+    await db.collection("users").createIndex({ username: 1 }, { unique: true, background: true });
+    // contact should be unique; use sparse: false (we expect contact present for registered users)
+    await db.collection("users").createIndex({ contact: 1 }, { unique: true, background: true });
+    console.log("Indexes ensured: users.username, users.contact (unique)");
+  } catch (idxErr) {
+    console.warn("Index creation warning:", idxErr.message || idxErr);
+  }
 }
 connectDB();
 
@@ -49,16 +59,17 @@ function verifyToken(req, res, next) {
   });
 }
 
-// ✅ REGISTER
+// ✅ REGISTER (with contact validation)
 app.post("/api/register", async (req, res) => {
   try {
-    const { username, password } = req.body || {};
+    const { username, password, contact } = req.body || {};
     const cleanUsername = String(username || "").trim();
     const cleanPassword = String(password || "");
+    const cleanContact = String(contact || "").replace(/\D/g, ""); // digits only
 
     // Required fields
-    if (!cleanUsername || !cleanPassword) {
-      return res.status(400).json({ message: "Username and password required" });
+    if (!cleanUsername || !cleanPassword || !cleanContact) {
+      return res.status(400).json({ message: "Username, password and contact required" });
     }
 
     // Minimum lengths
@@ -69,10 +80,23 @@ app.post("/api/register", async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
-    // Check existing user
-    const existing = await db.collection("users").findOne({ username: cleanUsername });
+    // Contact validation: exactly 10 digits and starts with 63-99
+    const contactRegex = /^(?:6[3-9]|[7-9]\d)\d{8}$/;
+    if (!contactRegex.test(cleanContact)) {
+      return res.status(400).json({
+        message: "Contact must be exactly 10 digits and start with a value between 63 and 99",
+      });
+    }
+
+    // Prevent duplicate username or contact (quick check)
+    const existing = await db.collection("users").findOne({
+      $or: [{ username: cleanUsername }, { contact: cleanContact }],
+    });
     if (existing) {
-      return res.status(409).json({ message: "Username already exists" });
+      if (existing.username === cleanUsername) {
+        return res.status(409).json({ message: "Username already exists" });
+      }
+      return res.status(409).json({ message: "Contact number already registered" });
     }
 
     // Hash password and insert user
@@ -80,6 +104,7 @@ app.post("/api/register", async (req, res) => {
     const newUser = {
       username: cleanUsername,
       password: hashed,
+      contact: cleanContact,
       createdAt: new Date(),
     };
     const insertRes = await db.collection("users").insertOne(newUser);
@@ -90,14 +115,24 @@ app.post("/api/register", async (req, res) => {
       expiresIn: "7d",
     });
 
-    await db.collection("users").updateOne(
-      { _id: userId },
-      { $set: { token } }
-    );
+    await db.collection("users").updateOne({ _id: userId }, { $set: { token } });
 
     return res.json({ success: true, message: "Registered", token });
   } catch (err) {
     console.error("Register error:", err);
+
+    // Handle duplicate key error from MongoDB (race-condition safe)
+    if (err && err.code === 11000) {
+      const dupKey = err.keyValue ? Object.keys(err.keyValue)[0] : null;
+      if (dupKey === "contact") {
+        return res.status(409).json({ message: "Contact number already registered" });
+      }
+      if (dupKey === "username") {
+        return res.status(409).json({ message: "Username already exists" });
+      }
+      return res.status(409).json({ message: "Duplicate value error" });
+    }
+
     return res.status(500).json({ message: "Server error" });
   }
 });

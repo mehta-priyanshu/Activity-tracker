@@ -8,6 +8,7 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [contact, setContact] = useState("");
   const navigate = useNavigate();
 
   const saveTokenAndRedirect = (token) => {
@@ -43,8 +44,10 @@ const Register = () => {
     // Enforce validation on the JS side so users cannot bypass via Inspect
     const cleanUsername = String(username || "").trim();
     const cleanPassword = String(password || "");
-    if (!cleanUsername || !cleanPassword) {
-      setMessage("Username and password are required.");
+    const cleanContact = String(contact || "").replace(/\D/g, ""); // digits only
+
+    if (!cleanUsername || !cleanPassword || !cleanContact) {
+      setMessage("Username, password and contact are required.");
       return;
     }
     if (cleanUsername.length < 3) {
@@ -55,9 +58,17 @@ const Register = () => {
       setMessage("Password must be at least 6 characters.");
       return;
     }
+
+    // contact: exactly 10 digits and first two digits between 63 and 99
+    const contactRegex = /^(?:6[3-9]|[7-9]\d)\d{8}$/;
+    if (!contactRegex.test(cleanContact)) {
+      setMessage("Enter valid contact number.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await API.post("/register", { username, password });
+      const res = await API.post("/register", { username, password, contact: cleanContact });
 
       // accept several possible token shapes
       const token =
@@ -70,6 +81,7 @@ const Register = () => {
         setMessage("Registration successful");
         setUsername("");
         setPassword("");
+        setContact("");
         return;
       }
 
@@ -78,6 +90,7 @@ const Register = () => {
       if (loggedIn) {
         setUsername("");
         setPassword("");
+        setContact("");
         return;
       }
 
@@ -124,6 +137,14 @@ const Register = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
+          />
+          <input
+            placeholder="Contact number (10 digits)"
+            type="tel"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            disabled={loading}
+            maxLength={14}
           />
           <button type="submit" disabled={loading}>
             {loading ? "Registering..." : "Register"}
