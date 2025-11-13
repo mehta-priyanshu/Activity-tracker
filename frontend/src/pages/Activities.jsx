@@ -19,12 +19,11 @@ const Activities = () => {
     title: "",
     description: "",
     date: "",
-    editCount: 0, // 🆕 track edit count
+    editCount: 0,
   });
 
   const ONE_HOUR = 60 * 60 * 1000; // 1 hour in ms
 
-  // 🟢 Fetch activities (wrapped with useCallback for stable reference)
   const fetchActivities = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -35,6 +34,7 @@ const Activities = () => {
       }
 
       const res = await API.get("/activities");
+      // assume res.data is array of activities
       setActivities(res.data);
       setFiltered(res.data);
     } catch (err) {
@@ -42,17 +42,36 @@ const Activities = () => {
       alert("Error fetching activities. Please login again.");
       navigate("/login");
     }
-  }, [navigate]); // ✅ include navigate dependency
+  }, [navigate]);
 
   useEffect(() => {
     fetchActivities();
-  }, [fetchActivities]); // ✅ now lint-safe and build-safe
+  }, [fetchActivities]);
 
+  // helper to produce YYYY-MM-DD for inputs and comparisons
+  const formatDateForInput = (dateValue) => {
+    if (!dateValue) return "";
+    try {
+      const d = new Date(dateValue);
+      if (isNaN(d.getTime())) return "";
+      return d.toISOString().split("T")[0];
+    } catch (err) {
+      console.error("Date format error:", err);
+      return "";
+    }
+  };
+
+  // Use activity.date (updated) for filtering/display, fall back to createdAt
   useEffect(() => {
     if (searchDate === "") {
       setFiltered(activities);
     } else {
-      setFiltered(activities.filter((a) => a.date === searchDate));
+      setFiltered(
+        activities.filter((a) => {
+          const activityDate = formatDateForInput(a.date || a.createdAt);
+          return activityDate === searchDate;
+        })
+      );
     }
   }, [searchDate, activities]);
 
@@ -73,16 +92,13 @@ const Activities = () => {
     }
   };
 
-  // 🟢 Automatically fill date when editing
   const openEditModal = (activity) => {
     setCurrentActivity({
       _id: activity._id,
       title: activity.title || "",
       description: activity.description || "",
-      date: activity.date
-        ? new Date(activity.date).toISOString().split("T")[0]
-        : new Date(activity.createdAt).toISOString().split("T")[0],
-      editCount: activity.editCount || 0, // 🆕 ensure edit count is stored
+      date: formatDateForInput(activity.date || activity.createdAt),
+      editCount: activity.editCount || 0,
     });
     setShowEditModal(true);
   };
@@ -98,7 +114,6 @@ const Activities = () => {
       return;
     }
 
-    // 🟢 Prevent more than 2 edits within 1 hour
     if (editCount >= 2) {
       alert("You can only edit this activity twice within 1 hour.");
       setShowEditModal(false);
@@ -106,22 +121,22 @@ const Activities = () => {
     }
 
     try {
+      // send date as YYYY-MM-DD or ISO; backend should accept and save it to activity.date
       await API.put(`/activities/${_id}`, {
         title,
         description,
         date,
-        editCount: editCount + 1, // 🆕 increase edit count
+        editCount: editCount + 1,
       });
       setShowEditModal(false);
       alert("Activity updated successfully");
-      fetchActivities();
+      await fetchActivities(); // refresh to get updated date from server
     } catch (err) {
       console.error(err);
       alert("Error updating activity");
     }
   };
 
-  // 🟢 Check if Edit/Delete allowed (<1 hour & <2 edits)
   const isEditable = (activity) => {
     if (!activity.createdAt) return false;
     const now = new Date();
@@ -163,9 +178,7 @@ const Activities = () => {
                   <h5 className="fw-bold">{a.title}</h5>
                   <p className="activity-desc">{a.description}</p>
                   <small className="text-muted">
-                    {a.createdAt
-                      ? new Date(a.createdAt).toISOString().split("T")[0]
-                      : "N/A"}
+                    {formatDateForInput(a.date || a.createdAt) || "N/A"}
                   </small>
                 </div>
 
@@ -237,12 +250,15 @@ const Activities = () => {
               ></textarea>
             </div>
             <div className="mb-3">
+              <label htmlFor="edit-date">Date:</label>
               <input
+                id="edit-date"
                 type="date"
                 className="form-control"
                 name="date"
                 value={currentActivity.date}
                 onChange={handleEditChange}
+                required
               />
             </div>
             <div className="d-flex justify-content-end">
