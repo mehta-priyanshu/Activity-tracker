@@ -37,7 +37,7 @@ async function connectDB() {
     await db.collection("users").createIndex({ username: 1 }, { unique: true, background: true });
     // contact should be unique; use sparse: false (we expect contact present for registered users)
     await db.collection("users").createIndex({ contact: 1 }, { unique: true, background: true });
-    console.log("Indexes ensured: users.username, users.contact (unique)");
+    //console.log("Indexes ensured: users.username, users.contact (unique)");
   } catch (idxErr) {
     console.warn("Index creation warning:", idxErr.message || idxErr);
   }
