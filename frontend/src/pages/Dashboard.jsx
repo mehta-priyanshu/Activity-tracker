@@ -126,6 +126,15 @@ const Dashboard = () => {
               View Activities
             </button>
             <button
+              className="dropdown-item-custom"
+              onClick={() => {
+                navigate("/edit-profile");
+                setDropdownOpen(false);
+              }}
+            >
+              Edit Profile
+            </button>
+            <button
               className="dropdown-item-custom text-danger"
               onClick={handleLogout}
             >

@@ -9,6 +9,7 @@ import Activities from "./pages/Activities";
 import AdminUserDetails from "./pages/AdminUserDetail";
 import ForgotPassword from "./pages/ForgotPswd";
 import ChangePassword from "./pages/ChangePswd";
+import Editprofile from "./pages/EditProfile";
 //import AdminDashboard from "./pages/AdminDashboard";
 
 const App = () => (
@@ -23,6 +24,8 @@ const App = () => (
       <Route path="/admin/user/:username" element={<AdminUserDetails />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/change-password" element={<ChangePassword />} />
+      <Route path ="/edit-profile" element={<Editprofile />} />
+      {/* <Route path="/admin-dashboard" element={<AdminDashboard />} /> */}
       </Routes>
   </Router>
 );

@@ -488,6 +488,95 @@ app.delete("/api/activities/:id", verifyToken, async (req, res) => {
   }
 });
 
+// GET current user profile
+app.get("/api/users/me", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const user = await db.collection("users").findOne({ _id: new ObjectId(userId) });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // don't return sensitive fields
+    return res.json({
+      _id: user._id,
+      username: user.username || null,
+      contact: user.contact || null,
+      createdAt: user.createdAt || null,
+      role: user.role || "user",
+    });
+  } catch (err) {
+    console.error("GET /api/users/me error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// UPDATE current user profile
+app.put("/api/users/me", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { username, contact, newPassword } = req.body || {};
+    const cleanUsername = String(username || "").trim();
+    const cleanContact = String(contact || "").replace(/\D/g, "");
+    const contactRegex = /^(?:6[3-9]|[7-9]\d)\d{8}$/;
+
+    if (!cleanUsername || cleanUsername.length < 3) {
+      return res.status(400).json({ message: "Username must be at least 3 characters" });
+    }
+    if (!contactRegex.test(cleanContact)) {
+      return res.status(400).json({ message: "Contact must be 10 digits and start with 63–99" });
+    }
+
+    // Validate newPassword if provided
+    let updateObj = { username: cleanUsername, contact: cleanContact };
+    if (newPassword) {
+      if (String(newPassword).length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+      const hashed = await bcrypt.hash(newPassword, 10);
+      updateObj.password = hashed;
+    }
+
+    // Check conflicts (other users)
+    const conflict = await db.collection("users").findOne({
+      $or: [{ username: cleanUsername }, { contact: cleanContact }],
+      _id: { $ne: new ObjectId(userId) },
+    });
+    if (conflict) {
+      if (conflict.username === cleanUsername) return res.status(409).json({ message: "Username already taken" });
+      if (conflict.contact === cleanContact) return res.status(409).json({ message: "Contact already registered" });
+      return res.status(409).json({ message: "Conflict with existing user" });
+    }
+
+    await db.collection("users").updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: updateObj }
+    );
+
+    const updated = await db.collection("users").findOne({ _id: new ObjectId(userId) });
+    return res.json({
+      message: "Profile updated",
+      user: {
+        _id: updated._id,
+        username: updated.username,
+        contact: updated.contact,
+        createdAt: updated.createdAt,
+      },
+    });
+  } catch (err) {
+    console.error("PUT /api/users/me error:", err);
+    if (err && err.code === 11000) {
+      const dupKey = err.keyValue ? Object.keys(err.keyValue)[0] : null;
+      if (dupKey === "username") return res.status(409).json({ message: "Username already taken" });
+      if (dupKey === "contact") return res.status(409).json({ message: "Contact already registered" });
+      return res.status(409).json({ message: "Duplicate value error" });
+    }
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 // ✅ Home route
 app.get("/", (req, res) => {
   res.send("API is running...");
